@@ -9,13 +9,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>,
 )
 
-// Service Workerの登録
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registered:', registration);
-    }).catch(registrationError => {
-      console.log('SW registration failed:', registrationError);
-    });
-  });
+// PWAの登録
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  // vite-plugin-pwaが生成したService Workerを登録
+  import('virtual:pwa-register').then(({ registerSW }) => {
+    registerSW({
+      onRegistered(registration) {
+        console.log('Service Worker registered:', registration)
+      },
+      onRegisterError(error) {
+        console.error('Service Worker registration failed:', error)
+      }
+    })
+  })
 }
