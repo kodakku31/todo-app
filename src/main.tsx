@@ -14,11 +14,11 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   // vite-plugin-pwaが生成したService Workerを登録
   import('virtual:pwa-register').then(({ registerSW }) => {
     registerSW({
-      onRegistered(registration) {
-        console.log('Service Worker registered:', registration)
+      onRegistered(r: ServiceWorkerRegistration | undefined) {
+        console.log('Service Worker registered:', r)
       },
-      onRegisterError(error) {
-        console.error('Service Worker registration failed:', error)
+      onRegisterError(e: Error) {
+        console.error('Service Worker registration failed:', e)
       }
     })
   })
