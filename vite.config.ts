@@ -1,47 +1,47 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react({
+    jsxRuntime: 'automatic',
+    jsxImportSource: '@emotion/react',
+    babel: {
+      plugins: ['@emotion/babel-plugin'],
+    },
+  })],
+  base: './',
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, 'src'),
     },
-  },
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'idb',
-      '@mui/material',
-      '@mui/x-date-pickers',
-      '@mui/x-date-pickers/AdapterDayjs',
-      'dayjs'
-    ],
-    force: true
   },
   server: {
     port: 5173,
+    host: true,
     strictPort: true,
-    hmr: {
-      overlay: false
-    }
   },
   build: {
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true
-    },
+    outDir: 'dist',
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'mui-vendor': ['@mui/material', '@mui/x-date-pickers'],
-          'database': ['idb']
-        }
-      }
-    }
-  }
+          'mui-vendor': [
+            '@mui/material',
+            '@mui/x-date-pickers',
+            '@emotion/react',
+            '@emotion/styled'
+          ],
+          'dayjs-vendor': ['dayjs'],
+        },
+      },
+    },
+  },
 });

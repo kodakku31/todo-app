@@ -1,275 +1,382 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
+  Box,
   List,
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
   TextField,
-  Button,
-  Box,
+  Typography,
   Checkbox,
-  FormControl,
-  InputLabel,
-  Select,
+  Paper,
+  Button,
   MenuItem,
-  Stack,
-  Tab,
-  Tabs,
-  CircularProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
-import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers';
-import dayjs from 'dayjs';
-import { CalendarView } from './CalendarView';
-import { getAllTodos, addTodo, updateTodo, deleteTodo } from '../utils/db';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import dayjs, { Dayjs } from 'dayjs';
+import { Todo, UpdateTodo } from '../utils/db';
 
-interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
-  dueDate: dayjs.Dayjs | null;
-  priority: 'high' | 'medium' | 'low';
+interface TodoListProps {
+  todos: Todo[];
+  selectedDate: Dayjs | null;
+  onAddTodo: (title: string) => void;
+  onUpdateTodo: (todo: UpdateTodo) => void;
+  onDeleteTodo: (id: number) => void;
+  onToggleComplete: (todo: Todo) => void;
 }
 
-export const TodoList = () => {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [newTodoText, setNewTodoText] = useState('');
-  const [dueDate, setDueDate] = useState<dayjs.Dayjs | null>(null);
-  const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editText, setEditText] = useState('');
-  const [view, setView] = useState<'list' | 'calendar'>('list');
-  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
-  const [loading, setLoading] = useState(true);
+export const TodoList: React.FC<TodoListProps> = ({
+  todos,
+  selectedDate,
+  onAddTodo,
+  onUpdateTodo,
+  onDeleteTodo,
+  onToggleComplete,
+}) => {
+  const [newTodo, setNewTodo] = useState('');
+  const [editingTodo, setEditingTodo] = useState<UpdateTodo | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  useEffect(() => {
-    const loadTodos = async () => {
-      try {
-        const loadedTodos = await getAllTodos();
-        setTodos(loadedTodos);
-      } catch (error) {
-        console.error('Failed to load todos:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTodos();
-  }, []);
-
-  const handleAddTodo = async () => {
-    if (newTodoText.trim()) {
-      const newTodo: Todo = {
-        id: Date.now(),
-        text: newTodoText.trim(),
-        completed: false,
-        dueDate: selectedDate || dueDate,
-        priority,
-      };
-
-      try {
-        await addTodo(newTodo);
-        setTodos([...todos, newTodo]);
-        setNewTodoText('');
-        setDueDate(null);
-        setPriority('medium');
-        setSelectedDate(null);
-      } catch (error) {
-        console.error('Failed to add todo:', error);
-      }
+  const handleAddTodo = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (newTodo.trim()) {
+      onAddTodo(newTodo.trim());
+      setNewTodo('');
     }
   };
 
-  const handleToggleTodo = async (id: number) => {
-    const todo = todos.find(t => t.id === id);
-    if (todo) {
-      const updatedTodo = { ...todo, completed: !todo.completed };
-      try {
-        await updateTodo(updatedTodo);
-        setTodos(todos.map(t => (t.id === id ? updatedTodo : t)));
-      } catch (error) {
-        console.error('Failed to update todo:', error);
-      }
+  const handleEdit = (todo: Todo) => {
+    if (todo.id !== undefined) {
+      setEditingTodo({
+        id: todo.id,
+        title: todo.title,
+        completed: todo.completed || false,
+        dueDate: todo.dueDate || null,
+      });
     }
   };
 
-  const handleDeleteTodo = async (id: number) => {
-    try {
-      await deleteTodo(id);
-      setTodos(todos.filter(todo => todo.id !== id));
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
+  const handleUpdateTodo = () => {
+    if (editingTodo && editingTodo.id !== undefined) {
+      onUpdateTodo({
+        id: editingTodo.id,
+        title: editingTodo.title,
+        completed: editingTodo.completed || false,
+        dueDate: editingTodo.dueDate || null,
+      });
+      setEditingTodo(null);
     }
   };
 
-  const handleStartEditing = (todo: Todo) => {
-    setEditingId(todo.id);
-    setEditText(todo.text);
-  };
-
-  const handleSaveEdit = async (id: number) => {
-    if (editText.trim()) {
-      const todo = todos.find(t => t.id === id);
-      if (todo) {
-        const updatedTodo = { ...todo, text: editText.trim() };
-        try {
-          await updateTodo(updatedTodo);
-          setTodos(todos.map(t => (t.id === id ? updatedTodo : t)));
-          setEditingId(null);
-          setEditText('');
-        } catch (error) {
-          console.error('Failed to update todo:', error);
-        }
-      }
+  const handleDelete = (id: number | undefined) => {
+    if (id !== undefined) {
+      onDeleteTodo(id);
     }
   };
 
-  const handleDateClick = (date: dayjs.Dayjs) => {
-    setSelectedDate(date);
-    setView('list');
+  const handleToggleComplete = (todo: Todo) => {
+    onToggleComplete(todo);
   };
-
-  const filteredTodos = selectedDate
-    ? todos.filter(
-        todo =>
-          todo.dueDate &&
-          todo.dueDate.format('YYYY-MM-DD') === selectedDate.format('YYYY-MM-DD')
-      )
-    : todos;
-
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
-      <Tabs
-        value={view}
-        onChange={(_, newValue) => setView(newValue)}
-        sx={{ mb: 3 }}
-        centered
+    <Box 
+      sx={{ 
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          bgcolor: 'background.default',
+        }}
       >
-        <Tab label="リスト" value="list" />
-        <Tab label="カレンダー" value="calendar" />
-      </Tabs>
-
-      {view === 'list' && (
-        <>
-          <Stack spacing={2} sx={{ mb: 4 }}>
-            <TextField
-              fullWidth
-              label="新しいタスク"
-              value={newTodoText}
-              onChange={e => setNewTodoText(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && handleAddTodo()}
-            />
-            <DatePicker
-              label="期限"
-              value={selectedDate || dueDate}
-              onChange={newDate => (selectedDate ? setSelectedDate(newDate) : setDueDate(newDate))}
-            />
-            <FormControl fullWidth>
-              <InputLabel>優先度</InputLabel>
-              <Select
-                value={priority}
-                label="優先度"
-                onChange={e => setPriority(e.target.value as 'high' | 'medium' | 'low')}
-              >
-                <MenuItem value="high">高</MenuItem>
-                <MenuItem value="medium">中</MenuItem>
-                <MenuItem value="low">低</MenuItem>
-              </Select>
-            </FormControl>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleAddTodo}
-              disabled={!newTodoText.trim()}
-            >
-              追加
-            </Button>
-          </Stack>
-
-          <List>
-            {filteredTodos.map(todo => (
-              <ListItem
-                key={todo.id}
+        <Box
+          sx={{
+            bgcolor: 'background.paper',
+            px: 2,
+            py: 2,
+            borderBottom: 1,
+            borderColor: 'divider',
+            ...(isMobile && {
+              position: 'sticky',
+              top: 0,
+              zIndex: 2,
+              backdropFilter: 'blur(10px)',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              ...(theme.palette.mode === 'dark' && {
+                backgroundColor: 'rgba(18, 18, 18, 0.8)',
+              }),
+            }),
+          }}
+        >
+          <Box
+            component="form"
+            onSubmit={handleAddTodo}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            <Box sx={{ position: 'relative' }}>
+              <TextField
+                fullWidth
+                value={newTodo}
+                onChange={(e) => setNewTodo(e.target.value)}
+                placeholder="新しいタスクを入力"
+                size="small"
                 sx={{
-                  bgcolor: 'background.paper',
-                  mb: 1,
-                  borderRadius: 1,
-                  border: 1,
-                  borderColor: 'divider',
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                    bgcolor: 'background.paper',
+                    boxShadow: 'none',
+                    border: 1,
+                    borderColor: 'divider',
+                    pl: 2,
+                    pr: 1,
+                    py: 1,
+                    fontSize: '1rem',
+                    '&:hover, &.Mui-focused': {
+                      borderColor: 'primary.main',
+                      boxShadow: '0 0 0 1px rgba(25, 118, 210, 0.2)',
+                    },
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none',
+                  },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={handleAddTodo}
+                      size="small"
+                      sx={{
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        '&:hover': {
+                          bgcolor: 'primary.dark',
+                        },
+                        width: 32,
+                        height: 32,
+                      }}
+                    >
+                      <AddIcon fontSize="small" />
+                    </IconButton>
+                  ),
+                }}
+              />
+            </Box>
+          </Box>
+        </Box>
+
+        <List 
+          sx={{ 
+            flex: 1,
+            overflowY: 'auto',
+            py: 1,
+            px: 2,
+            gap: 1.5,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {todos.map((todo) => (
+            <ListItem
+              key={todo.id}
+              sx={{
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                p: 0,
+                boxShadow: 'none',
+                border: 1,
+                borderColor: todo.completed ? 'divider' : 'primary.main',
+                opacity: todo.completed ? 0.7 : 1,
+                transition: 'all 0.2s ease',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: 4,
+                  height: '100%',
+                  bgcolor: todo.completed ? 'divider' : 'primary.main',
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                  px: 2,
+                  py: 1.5,
+                  pl: 3,
                 }}
               >
                 <Checkbox
                   checked={todo.completed}
-                  onChange={() => handleToggleTodo(todo.id)}
+                  onChange={() => handleToggleComplete(todo)}
+                  edge="start"
+                  sx={{
+                    '& .MuiSvgIcon-root': {
+                      fontSize: 24,
+                    },
+                    mr: 1.5,
+                    color: todo.completed ? 'text.disabled' : 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                  }}
                 />
-                {editingId === todo.id ? (
+                {editingTodo?.id === todo.id && editingTodo ? (
                   <TextField
                     fullWidth
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
-                    onKeyPress={e => e.key === 'Enter' && handleSaveEdit(todo.id)}
-                    onBlur={() => handleSaveEdit(todo.id)}
+                    value={editingTodo?.title || ''}
+                    onChange={(e) => {
+                      if (editingTodo && editingTodo.id !== undefined) {
+                        const updatedTodo: UpdateTodo = {
+                          id: editingTodo.id,
+                          title: e.target.value,
+                          completed: editingTodo.completed || false,
+                          dueDate: editingTodo.dueDate || null,
+                        };
+                        setEditingTodo(updatedTodo);
+                      }
+                    }}
+                    onBlur={handleUpdateTodo}
+                    onKeyPress={(e) => e.key === 'Enter' && handleUpdateTodo()}
+                    size="small"
                     autoFocus
-                  />
-                ) : (
-                  <ListItemText
-                    primary={todo.text}
-                    secondary={
-                      <>
-                        {todo.dueDate && `期限: ${todo.dueDate.format('YYYY/MM/DD')} | `}
-                        優先度: {
-                          todo.priority === 'high' ? '高' :
-                          todo.priority === 'medium' ? '中' : '低'
-                        }
-                      </>
-                    }
                     sx={{
-                      textDecoration: todo.completed ? 'line-through' : 'none',
+                      '& .MuiInputBase-root': {
+                        fontSize: '1rem',
+                        bgcolor: 'background.paper',
+                        '&::before, &::after': {
+                          display: 'none',
+                        },
+                      },
+                      '& .MuiInput-underline:before': {
+                        borderBottom: 'none',
+                      },
                     }}
                   />
+                ) : (
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontSize: '1rem',
+                        fontWeight: 500,
+                        textDecoration: todo.completed ? 'line-through' : 'none',
+                        color: todo.completed ? 'text.disabled' : 'text.primary',
+                        mb: todo.dueDate ? 0.5 : 0,
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {todo.title}
+                    </Typography>
+                    {todo.dueDate && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: '0.8rem',
+                          color: todo.completed ? 'text.disabled' : 'text.secondary',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                        }}
+                      >
+                        <CalendarTodayIcon sx={{ fontSize: '0.9rem' }} />
+                        {dayjs(todo.dueDate).format('M月D日')}
+                      </Typography>
+                    )}
+                  </Box>
                 )}
-                <ListItemSecondaryAction>
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    gap: 0.5, 
+                    ml: 1,
+                    opacity: 0.7,
+                    '&:hover': {
+                      opacity: 1,
+                    },
+                    transition: 'opacity 0.2s ease',
+                  }}
+                >
                   <IconButton
                     edge="end"
                     aria-label="edit"
-                    onClick={() => handleStartEditing(todo)}
-                    sx={{ mr: 1 }}
+                    onClick={() => handleEdit(todo)}
+                    size="small"
+                    sx={{ 
+                      color: 'text.secondary',
+                      p: 1,
+                      '&:hover': {
+                        color: 'primary.main',
+                        bgcolor: 'action.hover',
+                      },
+                    }}
                   >
-                    <EditIcon />
+                    <EditIcon fontSize="small" />
                   </IconButton>
                   <IconButton
                     edge="end"
                     aria-label="delete"
-                    onClick={() => handleDeleteTodo(todo.id)}
+                    onClick={() => todo.id && handleDelete(todo.id)}
+                    size="small"
+                    sx={{ 
+                      color: 'text.secondary',
+                      p: 1,
+                      '&:hover': {
+                        color: 'error.main',
+                        bgcolor: 'action.hover',
+                      },
+                    }}
                   >
-                    <DeleteIcon />
+                    <DeleteIcon fontSize="small" />
                   </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        </>
-      )}
-
-      {view === 'calendar' && (
-        <CalendarView todos={todos} onDateClick={handleDateClick} />
-      )}
+                </Box>
+              </Box>
+            </ListItem>
+          ))}
+          {todos.length === 0 && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                gap: 2,
+                opacity: 0.5,
+                userSelect: 'none',
+              }}
+            >
+              <AssignmentIcon sx={{ fontSize: '3rem' }} />
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                タスクがありません
+              </Typography>
+            </Box>
+          )}
+        </List>
+      </Paper>
     </Box>
   );
 };

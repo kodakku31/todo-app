@@ -1,104 +1,65 @@
-import { openDB, IDBPDatabase } from 'idb';
+import { openDB } from 'idb';
 import dayjs from 'dayjs';
 
-interface Todo {
-  id: number;
-  text: string;
+export interface BaseTodo {
+  title: string;
   completed: boolean;
   dueDate: string | null;
-  priority: 'high' | 'medium' | 'low';
 }
 
-const DB_NAME = 'todo-app-db';
-const STORE_NAME = 'todos';
-const DB_VERSION = 1;
+export interface Todo extends BaseTodo {
+  id?: number;
+}
 
-let dbInstance: IDBPDatabase | null = null;
+export type NewTodo = BaseTodo;
+export type UpdateTodo = Required<Todo>;
 
-const getDB = async () => {
-  if (!dbInstance) {
-    dbInstance = await openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        }
-      },
-    });
-  }
-  return dbInstance;
+const dbName = 'todo-db';
+const storeName = 'todos';
+const version = 1;
+
+const openTodoDB = async () => {
+  return openDB(dbName, version, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains(storeName)) {
+        const store = db.createObjectStore(storeName, {
+          keyPath: 'id',
+          autoIncrement: true,
+        });
+        store.createIndex('dueDate', 'dueDate');
+      }
+    },
+  });
 };
 
-export const getAllTodos = async () => {
-  try {
-    const db = await getDB();
-    const todos = await db.getAll(STORE_NAME);
-    return todos.map(todo => ({
-      ...todo,
-      dueDate: todo.dueDate ? dayjs(todo.dueDate) : null,
-    }));
-  } catch (error) {
-    console.error('Failed to get todos:', error);
-    throw new Error('タスクの取得に失敗しました');
-  }
+export const addTodo = async (todo: NewTodo): Promise<number> => {
+  const db = await openTodoDB();
+  const id = await db.add(storeName, {
+    ...todo,
+    dueDate: todo.dueDate ? dayjs(todo.dueDate).format() : null,
+  });
+  return typeof id === 'number' ? id : parseInt(id.toString(), 10);
 };
 
-export const addTodo = async (todo: {
-  id: number;
-  text: string;
-  completed: boolean;
-  dueDate: dayjs.Dayjs | null;
-  priority: 'high' | 'medium' | 'low';
-}) => {
-  try {
-    const db = await getDB();
-    const todoToSave: Todo = {
-      ...todo,
-      dueDate: todo.dueDate ? todo.dueDate.format() : null,
-    };
-    await db.put(STORE_NAME, todoToSave);
-  } catch (error) {
-    console.error('Failed to add todo:', error);
-    throw new Error('タスクの追加に失敗しました');
-  }
+export const updateTodo = async (todo: UpdateTodo): Promise<number> => {
+  const db = await openTodoDB();
+  const id = await db.put(storeName, {
+    ...todo,
+    dueDate: todo.dueDate ? dayjs(todo.dueDate).format() : null,
+  });
+  return typeof id === 'number' ? id : parseInt(id.toString(), 10);
 };
 
-export const updateTodo = async (todo: {
-  id: number;
-  text: string;
-  completed: boolean;
-  dueDate: dayjs.Dayjs | null;
-  priority: 'high' | 'medium' | 'low';
-}) => {
-  try {
-    const db = await getDB();
-    const todoToUpdate: Todo = {
-      ...todo,
-      dueDate: todo.dueDate ? todo.dueDate.format() : null,
-    };
-    await db.put(STORE_NAME, todoToUpdate);
-  } catch (error) {
-    console.error('Failed to update todo:', error);
-    throw new Error('タスクの更新に失敗しました');
-  }
+export const deleteTodo = async (id: number): Promise<void> => {
+  const db = await openTodoDB();
+  await db.delete(storeName, id);
 };
 
-export const deleteTodo = async (id: number) => {
-  try {
-    const db = await getDB();
-    await db.delete(STORE_NAME, id);
-  } catch (error) {
-    console.error('Failed to delete todo:', error);
-    throw new Error('タスクの削除に失敗しました');
-  }
-};
-
-export const deleteAllTodos = async () => {
-  try {
-    const db = await getDB();
-    const keys = await db.getAllKeys(STORE_NAME);
-    await Promise.all(keys.map(key => db.delete(STORE_NAME, key)));
-  } catch (error) {
-    console.error('Failed to delete all todos:', error);
-    throw new Error('全タスクの削除に失敗しました');
-  }
+export const getAllTodos = async (): Promise<Todo[]> => {
+  const db = await openTodoDB();
+  const todos = await db.getAll(storeName);
+  return todos.map(todo => ({
+    ...todo,
+    dueDate: todo.dueDate ? dayjs(todo.dueDate).format() : null,
+  }));
 };
