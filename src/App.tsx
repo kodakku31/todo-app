@@ -4,7 +4,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { StaticDatePicker } from '@mui/x-date-pickers/StaticDatePicker';
 import { PickersDay, PickersDayProps } from '@mui/x-date-pickers/PickersDay';
-import { Box, Container, IconButton, useMediaQuery, Typography, Paper } from '@mui/material';
+import { Box, Container, IconButton, useMediaQuery, Typography } from '@mui/material';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 import { TodoList } from './components/TodoList';
 import type { Todo, NewTodo, UpdateTodo } from './utils/db';
@@ -175,31 +175,28 @@ function App() {
             justifyContent: 'center',
             width: '100%',
             height: '100vh',
+            overflow: 'hidden'
           }}
         >
           <Container
             maxWidth={false}
             sx={{
               maxWidth: '800px !important',
-              width: '100vw',
+              width: '100%',
               padding: '16px',
               margin: '0 auto',
+              height: '100%',
+              overflow: 'hidden'
             }}
           >
             <Box
               sx={{
-                minHeight: '100vh',
-                height: '100vh',
-                bgcolor: 'background.default',
-                color: 'text.primary',
-                transition: 'all 0.3s ease-in-out',
                 display: 'flex',
                 flexDirection: 'column',
+                height: '100%',
+                width: '100%',
                 overflow: 'hidden',
-                position: 'relative',
-                ...(isMobile && {
-                  pb: 'env(safe-area-inset-bottom)',
-                }),
+                position: 'relative'
               }}
             >
               <Box
@@ -207,7 +204,7 @@ function App() {
                   position: 'fixed',
                   top: isMobile ? 'env(safe-area-inset-top)' : 16,
                   right: isMobile ? 8 : 16,
-                  zIndex: 1100,
+                  zIndex: 1100
                 }}
               >
                 <IconButton
@@ -219,9 +216,9 @@ function App() {
                     boxShadow: 1,
                     '&:hover': {
                       bgcolor: 'background.paper',
-                      transform: 'scale(1.05)',
+                      transform: 'scale(1.05)'
                     },
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
@@ -231,242 +228,154 @@ function App() {
               <Box
                 sx={{
                   display: 'flex',
-                  flexDirection: 'column',
-                  height: '100%',
-                  flex: 1,
-                  position: 'relative',
-                  overflow: 'hidden',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  borderBottom: 1,
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  position: 'fixed',
+                  top: isMobile ? 'env(safe-area-inset-top)' : 0,
+                  left: 0,
+                  right: 0,
+                  zIndex: 1000,
+                  backdropFilter: 'blur(10px)',
+                  backgroundColor: mode === 'dark' 
+                    ? 'rgba(30, 30, 30, 0.8)'
+                    : 'rgba(255, 255, 255, 0.8)'
                 }}
               >
                 <Box
                   sx={{
                     display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    bgcolor: 'background.paper',
-                    position: 'fixed',
-                    top: isMobile ? 'env(safe-area-inset-top)' : 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 1000,
-                    backdropFilter: 'blur(10px)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                    ...(mode === 'dark' && {
-                      backgroundColor: 'rgba(18, 18, 18, 0.8)',
-                    }),
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                    maxWidth: '800px',
+                    px: 2,
+                    py: 1
                   }}
                 >
-                  <Box
+                  <Typography
+                    variant="h6"
+                    component="h1"
                     sx={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      py: 1.5,
-                      position: 'relative',
-                      cursor: 'pointer',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        bottom: 0,
-                        left: '10%',
-                        right: '10%',
-                        height: 2,
-                        bgcolor: 'primary.main',
-                        transform: !showCalendar ? 'scaleX(1)' : 'scaleX(0)',
-                        transition: 'transform 0.2s ease',
-                      },
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                      transition: 'all 0.2s ease',
+                      fontWeight: 600,
+                      color: 'text.primary'
                     }}
-                    onClick={() => setShowCalendar(false)}
                   >
-                    <Typography
-                      sx={{
-                        fontSize: '0.95rem',
-                        fontWeight: !showCalendar ? 600 : 400,
-                        color: !showCalendar ? 'primary.main' : 'text.secondary',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      タスク
-                    </Typography>
-                  </Box>
-                  <Box
+                    {showCalendar ? 'カレンダー' : 'タスク'}
+                  </Typography>
+                  <IconButton
+                    onClick={() => setShowCalendar(!showCalendar)}
                     sx={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      py: 1.5,
-                      position: 'relative',
-                      cursor: 'pointer',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        bottom: 0,
-                        left: '10%',
-                        right: '10%',
-                        height: 2,
-                        bgcolor: 'primary.main',
-                        transform: showCalendar ? 'scaleX(1)' : 'scaleX(0)',
-                        transition: 'transform 0.2s ease',
-                      },
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                      transition: 'all 0.2s ease',
+                      color: 'text.primary'
                     }}
-                    onClick={() => setShowCalendar(true)}
                   >
-                    <Typography
-                      sx={{
-                        fontSize: '0.95rem',
-                        fontWeight: showCalendar ? 600 : 400,
-                        color: showCalendar ? 'primary.main' : 'text.secondary',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      カレンダー
-                    </Typography>
-                  </Box>
+                    {showCalendar ? (
+                      <Typography variant="body2">タスク</Typography>
+                    ) : (
+                      <Typography variant="body2">カレンダー</Typography>
+                    )}
+                  </IconButton>
                 </Box>
+              </Box>
 
-                <Box
-                  sx={{
-                    flex: 1,
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    height: '100%',
-                    mt: 'calc(48px + env(safe-area-inset-top))',
-                  }}
-                >
+              <Box
+                sx={{
+                  flex: 1,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  height: '100%',
+                  marginTop: 'calc(48px + env(safe-area-inset-top))'
+                }}
+              >
+                {!showCalendar ? (
+                  <TodoList
+                    selectedDate={selectedDate}
+                    todos={todos}
+                    onAddTodo={handleAddTodo}
+                    onUpdateTodo={handleUpdateTodo}
+                    onDeleteTodo={handleDeleteTodo}
+                    onToggleComplete={handleToggleComplete}
+                  />
+                ) : (
                   <Box
                     sx={{
+                      flex: 1,
                       display: 'flex',
-                      flexDirection: isMobile ? 'column' : 'row',
-                      gap: 2,
-                      width: '100%',
-                      maxWidth: '100%',
+                      flexDirection: 'column',
                       overflow: 'hidden',
+                      p: 2,
                     }}
                   >
-                    <Box
-                      sx={{
-                        flex: isMobile ? 'none' : 1,
-                        minWidth: isMobile ? '100%' : '320px',
-                        maxWidth: isMobile ? '100%' : '400px',
+                    <StaticDatePicker
+                      value={selectedDate}
+                      onChange={(newValue) => {
+                        setSelectedDate(newValue);
+                        setShowCalendar(false);
                       }}
-                    >
-                      <Paper
-                        elevation={3}
-                        sx={{
-                          height: '100%',
-                          overflow: 'hidden',
-                          '& .MuiCalendarPicker-root': {
-                            width: '100%',
-                            maxWidth: '100%',
-                          },
-                          '& .MuiPickersDay-root': {
-                            fontSize: isMobile ? '0.8rem' : '1rem',
-                          },
-                        }}
-                      >
-                        {!showCalendar ? (
-                          <TodoList
-                            selectedDate={selectedDate}
-                            todos={todos}
-                            onAddTodo={handleAddTodo}
-                            onUpdateTodo={handleUpdateTodo}
-                            onDeleteTodo={handleDeleteTodo}
-                            onToggleComplete={handleToggleComplete}
-                          />
-                        ) : (
-                          <Box
-                            sx={{
-                              flex: 1,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              overflow: 'hidden',
-                              p: isMobile ? 1 : 2,
-                            }}
-                          >
-                            <StaticDatePicker
-                              value={selectedDate}
-                              onChange={(newValue) => {
-                                setSelectedDate(newValue);
-                                setShowCalendar(false);
-                              }}
-                              slots={{
-                                day: (props: PickersDayProps<Dayjs>) => {
-                                  const todosCount = getTodosCountForDate(props.day);
-                                  return (
-                                    <Box
-                                      sx={{
-                                        position: 'relative',
-                                        width: '100%',
-                                        height: '100%',
-                                      }}
-                                    >
-                                      <PickersDay {...props} />
-                                      {todosCount > 0 && (
-                                        <Typography
-                                          sx={{
-                                            position: 'absolute',
-                                            bottom: -2,
-                                            right: -2,
-                                            fontSize: '0.7rem',
-                                            backgroundColor: 'primary.main',
-                                            color: 'white',
-                                            borderRadius: '50%',
-                                            width: '16px',
-                                            height: '16px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            lineHeight: 1,
-                                          }}
-                                        >
-                                          {todosCount}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  );
-                                },
-                              }}
-                              slotProps={{
-                                toolbar: { hidden: true },
-                                day: {
-                                  sx: {
-                                    fontSize: '0.9rem',
-                                    width: 36,
-                                    height: 36,
-                                    '&.Mui-selected': {
-                                      backgroundColor: 'primary.main',
-                                    },
-                                  },
-                                },
-                              }}
+                      slots={{
+                        day: (props: PickersDayProps<Dayjs>) => {
+                          const todosCount = getTodosCountForDate(props.day);
+                          return (
+                            <Box
                               sx={{
-                                backgroundColor: 'background.paper',
-                                borderRadius: 2,
-                                '& .MuiPickersDay-root': {
-                                  fontSize: '0.9rem',
-                                },
+                                position: 'relative',
+                                width: '100%',
+                                height: '100%',
                               }}
-                            />
-                          </Box>
-                        )}
-                      </Paper>
-                    </Box>
+                            >
+                              <PickersDay {...props} />
+                              {todosCount > 0 && (
+                                <Typography
+                                  sx={{
+                                    position: 'absolute',
+                                    bottom: -2,
+                                    right: -2,
+                                    fontSize: '0.7rem',
+                                    backgroundColor: 'primary.main',
+                                    color: 'white',
+                                    borderRadius: '50%',
+                                    width: '16px',
+                                    height: '16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    lineHeight: 1,
+                                  }}
+                                >
+                                  {todosCount}
+                                </Typography>
+                              )}
+                            </Box>
+                          );
+                        },
+                      }}
+                      slotProps={{
+                        toolbar: { hidden: true },
+                        day: {
+                          sx: {
+                            fontSize: '0.9rem',
+                            width: 36,
+                            height: 36,
+                            '&.Mui-selected': {
+                              backgroundColor: 'primary.main',
+                            },
+                          },
+                        },
+                      }}
+                      sx={{
+                        backgroundColor: 'background.paper',
+                        borderRadius: 2,
+                        '& .MuiPickersDay-root': {
+                          fontSize: '0.9rem',
+                        },
+                      }}
+                    />
                   </Box>
-                </Box>
+                )}
               </Box>
             </Box>
           </Container>
